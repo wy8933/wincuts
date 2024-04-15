@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import ctypes
 import tempfile
+from pathlib import Path
+
 class UninstallerWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -79,10 +81,16 @@ class UninstallerWindow(QMainWindow):
 
         # Remove the folder and its contents
         self.removeFolder(folder_path)
+
+        # Attempt to remove the .bat file from the Startup folder
+        self.remove_from_startup()
+
+        # Schedule the uninstaller itself for deletion
         self.schedule_self_deletion()
+
         # Final message to the user
         self.infoText.append(
-            "Uninstallation completed. The uninstaller will be removed upon reboot. Please close the uninstaller.")
+            "Uninstallation completed. The uninstaller and all associated files will be removed upon reboot. Please close the uninstaller.")
 
     def schedule_self_deletion(self):
         self.infoText.append("yes")
@@ -149,6 +157,28 @@ class UninstallerWindow(QMainWindow):
 
     def close_application(self):
         QApplication.quit()
+
+
+
+
+    def remove_from_startup(self, name="integrated_wincuts.bat"):
+        if not name:
+            raise ValueError("The file name cannot be empty.")
+
+        # The path to the Startup folder
+        startup_path = Path.home() / "AppData" / "Roaming" / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
+
+        # Check if the .bat file exists in the Startup folder
+        file_path = startup_path / name
+        if file_path.exists():
+            try:
+                os.remove(file_path)
+                self.infoText.append(f"Deleted {name} from Startup.")
+            except Exception as e:
+                self.infoText.append(f"Failed to delete {name} from Startup: {e}")
+        else:
+            self.infoText.append(f"{name} not found in Startup.")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

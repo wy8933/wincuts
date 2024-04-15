@@ -1,2 +1,5 @@
 validated.dat
 output/
+# IntelliJ IDEA files
+.idea/
+*.iml

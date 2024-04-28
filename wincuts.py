@@ -3,7 +3,7 @@ import csv
 import datetime
 import subprocess
 import argparse
-from PySide2.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction, QLabel, QLineEdit, QPushButton, QListWidget, QListWidgetItem, QMessageBox, QVBoxLayout, QWidget, QCheckBox, QHBoxLayout
+from PySide2.QtWidgets import QDialog, QTextBrowser, QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction, QLabel, QLineEdit, QPushButton, QListWidget, QListWidgetItem, QMessageBox, QVBoxLayout, QWidget, QCheckBox, QHBoxLayout
 from PySide2.QtGui import QIcon
 from keyboard import add_hotkey, remove_hotkey
 import ctypes
@@ -39,6 +39,42 @@ class ShortcutManager:
         del self.shortcuts[index]
         self.save_shortcuts("validated.dat")  # Save shortcuts after deleting
 
+class HelpDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("Help - WinCuts")
+        self.resize(500, 400)
+
+        # Logo display
+        self.setWindowIcon(QIcon("logo.png"))
+
+        text_browser = QTextBrowser(self)
+        text_browser.setHtml("""
+        <h1>WinCuts Help</h1>
+        <h2>Overview</h2>
+        <p>WinCuts is a Windows-native tool designed to enhance productivity by allowing users to set up and manage custom keyboard shortcuts for shell/cmd commands.</p>
+        <h2>How to Use</h2>
+        <ul>
+            <li><b>Set Shortcuts:</b> Enter a combination of keys and a command you wish to run. Toggle 'Window Patch' if needed.</li>
+            <li><b>Delete Shortcuts:</b> Select a shortcut and press the 'Delete' button.</li>
+            <li><b>System Tray:</b> Minimize the application to the system tray for a cleaner workspace. Right-click the tray icon to open or quit.</li>
+        </ul>
+        <h2>Uninstalling</h2>
+        <p>Run <i>uninstaller.exe</i> from the folder to safely uninstall the application.</p>
+        <h2>Window Patch</h2>
+        <p>Use the experimental 'Window Patch' feature with caution as it may affect application behavior.</p>
+        """)
+        button_ok = QPushButton('OK', self)
+        button_ok.clicked.connect(self.accept)
+
+        layout = QVBoxLayout()
+        layout.addWidget(text_browser)
+        layout.addWidget(button_ok)
+        self.setLayout(layout)
+
 class ShortcutEditor(QWidget):
     def __init__(self, shortcut_manager, main_window):
         super().__init__()
@@ -48,8 +84,8 @@ class ShortcutEditor(QWidget):
 
     def initUI(self):
         self.setWindowTitle("Shortcut Editor")
-        self.setMinimumSize(400, 300)  # Minimum size restriction
-        self.resize(600, 400)  # Default size
+        self.setMinimumSize(400, 300)
+        self.resize(600, 400)
 
         self.label_keys = QLabel("Keys:")
         self.lineedit_keys = QLineEdit()
@@ -58,7 +94,6 @@ class ShortcutEditor(QWidget):
         self.label_open_in_window = QLabel("Window Patch (experimental):")
         self.checkbox_open_in_window = QCheckBox()
 
-        # Horizontal layout for the checkbox and label
         checkbox_layout = QHBoxLayout()
         checkbox_layout.addWidget(self.label_open_in_window)
         checkbox_layout.addWidget(self.checkbox_open_in_window)
@@ -66,6 +101,9 @@ class ShortcutEditor(QWidget):
 
         self.button_set_shortcut = QPushButton("Set Shortcut")
         self.button_set_shortcut.clicked.connect(self.set_shortcut)
+
+        self.button_help = QPushButton("Help", self)
+        self.button_help.clicked.connect(self.show_help)
 
         self.listwidget_shortcuts = QListWidget()
         self.listwidget_shortcuts.setSelectionMode(QListWidget.SingleSelection)
@@ -77,12 +115,16 @@ class ShortcutEditor(QWidget):
         layout.addWidget(self.lineedit_keys)
         layout.addWidget(self.label_command)
         layout.addWidget(self.lineedit_command)
-        layout.addLayout(checkbox_layout)  # Adding the horizontal layout
+        layout.addLayout(checkbox_layout)
         layout.addWidget(self.button_set_shortcut)
         layout.addWidget(self.listwidget_shortcuts)
         layout.addWidget(self.button_delete_shortcut)
+        layout.addWidget(self.button_help)  # Add Help button to the layout
 
         self.setLayout(layout)
+    def show_help(self):
+        help_dialog = HelpDialog()
+        help_dialog.exec_()
 
     def set_shortcut(self):
         keys = self.lineedit_keys.text()
@@ -137,38 +179,33 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Shortcut Manager")
-        self.setMinimumSize(400, 300)  # Minimum size restriction
-        self.resize(400, 300)  # Default size
+        self.setMinimumSize(400, 300)
+        self.resize(400, 300)
         self.setWindowIcon(QIcon("logo.png"))
 
-        # Create a system tray icon
         self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon("logo.png"))  # Set your own icon
+        self.tray_icon.setIcon(QIcon("logo.png"))
 
-        # Create a menu for the system tray icon
         tray_menu = QMenu()
 
         open_action = QAction("Open", self)
+        help_action = QAction("Help", self)  # Help action
         quit_action = QAction("Quit", self)
 
         open_action.triggered.connect(self.show)
         quit_action.triggered.connect(self.quit)
 
         tray_menu.addAction(open_action)
+        tray_menu.addAction(help_action)  # Add help action to tray menu
         tray_menu.addAction(quit_action)
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
 
-        # Set up shortcut editor
         self.shortcut_editor = ShortcutEditor(self.shortcut_manager, self)
         self.setCentralWidget(self.shortcut_editor)
-
-        # Load shortcuts
         self.shortcut_manager.load_shortcuts("validated.dat")
-        self.shortcut_editor.list_shortcuts()  # Ensure shortcuts are listed
-
-        # Start listening for shortcuts
+        self.shortcut_editor.list_shortcuts()
         self.listen_shortcuts()
 
     def closeEvent(self, event):

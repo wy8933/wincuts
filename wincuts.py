@@ -62,10 +62,10 @@ class HelpDialog(QDialog):
             <li><b>Delete Shortcuts:</b> Select a shortcut and press the 'Delete' button.</li>
             <li><b>System Tray:</b> Minimize the application to the system tray for a cleaner workspace. Right-click the tray icon to open or quit.</li>
         </ul>
-        <h2>Uninstalling</h2>
-        <p>Run <i>uninstaller.exe</i> from the folder to safely uninstall the application.</p>
         <h2>Window Patch</h2>
-        <p>Use the experimental 'Window Patch' feature with caution as it may affect application behavior.</p>
+        <p>The 'Window Patch' feature allows commands that require a specific window context to execute properly. It is particularly useful for applications that do not respond well to being launched via shortcuts due to their reliance on a specific startup environment. Use this feature with caution as it modifies the way commands are executed and can lead to unexpected behavior if used improperly.</p>
+        <h2>Uninstalling</h2>
+        <p>Run <i>cleanup.exe</i> from the integration folder to safely uninstall the application.</p>
         """)
         button_ok = QPushButton('OK', self)
         button_ok.clicked.connect(self.accept)
